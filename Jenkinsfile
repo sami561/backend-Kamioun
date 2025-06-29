@@ -46,9 +46,9 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE_PREFIX}api-gateway:${env.BUILD_NUMBER}", './api-gateway')
-                    docker.build("${DOCKER_IMAGE_PREFIX}service1:${env.BUILD_NUMBER}", './service1')
-                    docker.build("${DOCKER_IMAGE_PREFIX}service2:${env.BUILD_NUMBER}", './service2')
+                    docker.build("${IMAGE_NAME}api-gateway:${env.BUILD_NUMBER}", './api-gateway')
+                    docker.build("${IMAGE_NAME}service1:${env.BUILD_NUMBER}", './service1')
+                    docker.build("${IMAGE_NAME}service2:${env.BUILD_NUMBER}", './service2')
                 }
             }
         }
@@ -57,14 +57,14 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
-                        docker.image("${DOCKER_IMAGE_PREFIX}api-gateway:${env.BUILD_NUMBER}").push()
-                        docker.image("${DOCKER_IMAGE_PREFIX}service1:${env.BUILD_NUMBER}").push()
-                        docker.image("${DOCKER_IMAGE_PREFIX}service2:${env.BUILD_NUMBER}").push()
+                        docker.image("${IMAGE_NAME}api-gateway:${env.BUILD_NUMBER}").push()
+                        docker.image("${IMAGE_NAME}service1:${env.BUILD_NUMBER}").push()
+                        docker.image("$IMAGE_NAME}service2:${env.BUILD_NUMBER}").push()
                         
                         // Optionally push as latest
-                        docker.image("${DOCKER_IMAGE_PREFIX}api-gateway:${env.BUILD_NUMBER}").push('latest')
-                        docker.image("${DOCKER_IMAGE_PREFIX}service1:${env.BUILD_NUMBER}").push('latest')
-                        docker.image("${DOCKER_IMAGE_PREFIX}service2:${env.BUILD_NUMBER}").push('latest')
+                        docker.image("${IMAGE_NAME}api-gateway:${env.BUILD_NUMBER}").push('latest')
+                        docker.image("${IMAGE_NAME}service1:${env.BUILD_NUMBER}").push('latest')
+                        docker.image("${IMAGE_NAME}service2:${env.BUILD_NUMBER}").push('latest')
                     }
                 }
             }
