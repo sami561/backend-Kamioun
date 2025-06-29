@@ -22,7 +22,7 @@ export const config: Config = {
   GATEWAY_JWT_EXPIRES_IN: process.env.GATEWAY_JWT_EXPIRES_IN || '1m',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-  OMS_SERVICE_URL: process.env.OMS_SERVICE_URL || 'http://localhost:3004',
+  OMS_SERVICE_URL: process.env.OMS_SERVICE_URL || 'http://0.0.0.0::3002',
   KAMARKET_SERVICE_URL:
-    process.env.KAMARKET_SERVICE_URL || 'http://localhost:3001',
+    process.env.KAMARKET_SERVICE_URL || 'http://0.0.0.0::3001',
 };
