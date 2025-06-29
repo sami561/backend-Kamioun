@@ -3,7 +3,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+        DOCKER_HUB_CREDENTIALS = credentials('dh_cred')
         DOCKER_IMAGE_PREFIX = 'your-dockerhub-username/'
     }
     
