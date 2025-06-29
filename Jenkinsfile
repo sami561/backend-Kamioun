@@ -1,102 +1,109 @@
 pipeline {
     agent any
-    
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('dh_cred')
-        IMAGE_NAME = "${env.DOCKER_HUB_CREDENTIALS_USR}/back-pfe"
+        DOCKERHUB_CREDENTIALS = credentials('dh_cred')
+        REGISTRY_NAMESPACE = "${DOCKERHUB_CREDENTIALS_USR}"
+        // Define image names for each service
+        API_GATEWAY_IMAGE = "${REGISTRY_NAMESPACE}/api-gateway"
+        OMS_IMAGE = "${REGISTRY_NAMESPACE}/oms-express-server"
+        KAMARKET_IMAGE = "${REGISTRY_NAMESPACE}/kamarket-express-server"
     }
-    
+    triggers {
+        pollSCM('*/5 * * * *') // Check every 5 minutes
+    }
     stages {
         stage('Checkout') {
             steps {
+                echo "Getting source code for all microservices"
                 checkout scm
             }
         }
         
-        stage('Install Dependencies') {
+        stage('Docker Auth') {
             steps {
                 script {
-                    // Install Node.js using Jenkins NodeJS plugin (recommended approach)
-                    // Make sure NodeJS plugin is installed and configured in Jenkins
-                    // This avoids the need for sudo
                     sh '''
-                        node --version || echo "Node.js not installed"
-                        npm --version || echo "npm not installed"
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
                     '''
                 }
             }
         }
         
-        stage('Build and Test') {
-            parallel {
-                stage('API Gateway') {
-                    steps {
-                        dir('api-gateway') {
-                            sh 'npm install'
-                            sh 'npm test'
-                        }
-                    }
-                }
-                stage('Kamarket Service') {
-                    steps {
-                        dir('Kamarket-express-server') {
-                            sh 'npm install'
-                            sh 'npm test'
-                        }
-                    }
-                }
-                stage('OMS Service') {
-                    steps {
-                        dir('oms-express-server') {
-                            sh 'npm install'
-                            sh 'npm test'
-                        }
+        stage('Build API Gateway') {
+            steps {
+                script {
+                    dir('api-gateway') {  // Assuming API Gateway is in this subdirectory
+                        sh """
+                        docker build -t ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} .
+                        """
                     }
                 }
             }
         }
         
-        stage('Build Docker Images') {
+        stage('Build OMS Express Server') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}-api-gateway:${env.BUILD_NUMBER}", './api-gateway')
-                    docker.build("${IMAGE_NAME}-kamarket-service:${env.BUILD_NUMBER}", './Kamarket-express-server')
-                    docker.build("${IMAGE_NAME}-oms-service:${env.BUILD_NUMBER}", './oms-express-server')
-                }
-            }
-        }
-        
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDENTIALS') {
-                        docker.image("${IMAGE_NAME}-api-gateway:${env.BUILD_NUMBER}").push()
-                        docker.image("${IMAGE_NAME}-kamarket-service:${env.BUILD_NUMBER}").push()
-                        docker.image("${IMAGE_NAME}-oms-service:${env.BUILD_NUMBER}").push()
+                    dir('oms-express-server') {
+                        sh """
+                        docker build -t ${OMS_IMAGE}:${env.BUILD_NUMBER} .
+                        """
                     }
                 }
             }
         }
         
-        stage('Deploy with Docker Compose') {
+        stage('Build Kamarket Express Server') {
             steps {
                 script {
-                    sh 'docker-compose down || true'
-                    sh 'docker-compose up -d'
+                    dir('kamarket-express-server') {
+                        sh """
+                        docker build -t ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} .
+                        """
+                    }
                 }
             }
         }
-    }
-    
-    post {
-        always {
-            cleanWs()
+        
+        stage('Push Images') {
+            steps {
+                script {
+                    sh """
+                    docker push ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER}
+                    docker push ${OMS_IMAGE}:${env.BUILD_NUMBER}
+                    docker push ${KAMARKET_IMAGE}:${env.BUILD_NUMBER}
+                    """
+                }
+            }
         }
-        success {
-            echo "Build ${env.BUILD_NUMBER} succeeded!"
+        
+        stage('Cleanup') {
+            steps {
+                script {
+                    sh """
+                    docker rmi ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} || true
+                    docker rmi ${OMS_IMAGE}:${env.BUILD_NUMBER} || true
+                    docker rmi ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} || true
+                    docker logout
+                    """
+                }
+            }
         }
-        failure {
-            echo "Build ${env.BUILD_NUMBER} failed!"
+        
+        // Optional: Add deployment stage
+        stage('Deploy to Staging') {
+            when {
+                branch 'develop' // Example: only deploy from develop branch
+            }
+            steps {
+                script {
+                    // Example commands (adjust for your environment):
+                    echo "Deploying to staging environment"
+                    // kubectl set image deployment/api-gateway api-gateway=${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER}
+                    // kubectl set image deployment/oms oms=${OMS_IMAGE}:${env.BUILD_NUMBER}
+                    // kubectl set image deployment/kamarket kamarket=${KAMARKET_IMAGE}:${env.BUILD_NUMBER}
+                }
+            }
         }
     }
 }
