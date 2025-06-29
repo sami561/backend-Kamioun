@@ -22,7 +22,7 @@ pipeline {
                     def services = [
                         [name: 'API Gateway', path: './api-gateway'],
                         [name: 'OMS Server', path: './oms-express-server'],
-                        [name: 'Kamarket Server', path: './kamarket-express-server']
+                        [name: 'Kamarket Server', path: './Kamarket-express-server']
                     ]
                     
                     services.each { service ->
