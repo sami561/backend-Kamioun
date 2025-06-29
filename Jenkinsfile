@@ -93,6 +93,17 @@ pipeline {
                 }
             }
         }
+        stage('Deploy with Docker Compose') {
+            steps {
+                script {
+                    sh """
+                    export BUILD_NUMBER=${env.BUILD_NUMBER}
+                    docker-compose pull
+                    docker-compose up -d --remove-orphans
+                    """
+                }
+            }
+        }
     }
     post {
         always {

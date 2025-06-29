@@ -1,9 +1,8 @@
-# docker-compose.yml
 version: "3.8"
 
 services:
   api-gateway:
-    build: ./api-gateway
+    image: samiayachi/api-gateway:${BUILD_NUMBER}
     ports:
       - "3000:3000"
     environment:
@@ -16,14 +15,14 @@ services:
       - microservices-network
 
   service1:
-    build: ./Kamarket-express-server
+    image: samiayachi/kamarket-express-server:${BUILD_NUMBER}
     ports:
       - "3001:3001"
     networks:
       - microservices-network
 
   service2:
-    build: ./oms-express-server
+    image: samiayachi/oms-express-server:${BUILD_NUMBER}
     ports:
       - "3002:3002"
     networks:
