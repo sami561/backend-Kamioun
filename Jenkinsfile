@@ -1,16 +1,32 @@
-// Jenkinsfile
 pipeline {
     agent any
     
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('dh_cred')
-        IMAGE_NAME = "${DOCKERHUB_CREDENTIALS_USR}/back-pfe"
+        IMAGE_NAME = "${env.DOCKER_HUB_CREDENTIALS_USR}/back-pfe"
     }
     
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // Install Node.js if not present
+                    if (isUnix()) {
+                        sh '''
+                            curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+                            sudo apt-get install -y nodejs
+                            npm install -g npm@latest
+                        '''
+                    } else {
+                        bat 'choco install nodejs -y'
+                    }
+                }
             }
         }
         
@@ -24,17 +40,17 @@ pipeline {
                         }
                     }
                 }
-                stage('Service 1') {
+                stage('Kamarket Service') {
                     steps {
-                        dir('service1') {
+                        dir('Kamarket-express-server') {
                             sh 'npm install'
                             sh 'npm test'
                         }
                     }
                 }
-                stage('Service 2') {
+                stage('OMS Service') {
                     steps {
-                        dir('service2') {
+                        dir('oms-express-server') {
                             sh 'npm install'
                             sh 'npm test'
                         }
@@ -46,9 +62,9 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}api-gateway:${env.BUILD_NUMBER}", './api-gateway')
-                    docker.build("${IMAGE_NAME}service1:${env.BUILD_NUMBER}", './service1')
-                    docker.build("${IMAGE_NAME}service2:${env.BUILD_NUMBER}", './service2')
+                    docker.build("${IMAGE_NAME}-api-gateway:${env.BUILD_NUMBER}", './api-gateway')
+                    docker.build("${IMAGE_NAME}-kamarket-service:${env.BUILD_NUMBER}", './Kamarket-express-server')
+                    docker.build("${IMAGE_NAME}-oms-service:${env.BUILD_NUMBER}", './oms-express-server')
                 }
             }
         }
@@ -56,24 +72,29 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
-                        docker.image("${IMAGE_NAME}api-gateway:${env.BUILD_NUMBER}").push()
-                        docker.image("${IMAGE_NAME}service1:${env.BUILD_NUMBER}").push()
-                        docker.image("$IMAGE_NAME}service2:${env.BUILD_NUMBER}").push()
+                    docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDENTIALS') {
+                        docker.image("${IMAGE_NAME}-api-gateway:${env.BUILD_NUMBER}").push()
+                        docker.image("${IMAGE_NAME}-kamarket-service:${env.BUILD_NUMBER}").push()
+                        docker.image("${IMAGE_NAME}-oms-service:${env.BUILD_NUMBER}").push()
                         
-                        // Optionally push as latest
-                        docker.image("${IMAGE_NAME}api-gateway:${env.BUILD_NUMBER}").push('latest')
-                        docker.image("${IMAGE_NAME}service1:${env.BUILD_NUMBER}").push('latest')
-                        docker.image("${IMAGE_NAME}service2:${env.BUILD_NUMBER}").push('latest')
+                        // Push as latest tags
+                        docker.image("${IMAGE_NAME}-api-gateway:${env.BUILD_NUMBER}").push('latest')
+                        docker.image("${IMAGE_NAME}-kamarket-service:${env.BUILD_NUMBER}").push('latest')
+                        docker.image("${IMAGE_NAME}-oms-service:${env.BUILD_NUMBER}").push('latest')
                     }
                 }
             }
         }
         
-        stage('Deploy') {
+        stage('Deploy with Docker Compose') {
             steps {
-                sh 'docker-compose down'
-                sh 'docker-compose up -d'
+                script {
+                    // Stop and remove existing containers
+                    sh 'docker-compose down || true'
+                    
+                    // Start new containers
+                    sh 'docker-compose up -d'
+                }
             }
         }
     }
@@ -83,10 +104,14 @@ pipeline {
             cleanWs()
         }
         success {
-            slackSend(color: 'good', message: "Build ${env.BUILD_NUMBER} succeeded!")
+            echo "Build ${env.BUILD_NUMBER} succeeded!"
+            // Uncomment if you have Slack plugin installed:
+            // slackSend(color: 'good', message: "Build ${env.BUILD_NUMBER} succeeded!")
         }
         failure {
-            slackSend(color: 'danger', message: "Build ${env.BUILD_NUMBER} failed!")
+            echo "Build ${env.BUILD_NUMBER} failed!"
+            // Uncomment if you have Slack plugin installed:
+            // slackSend(color: 'danger', message: "Build ${env.BUILD_NUMBER} failed!")
         }
     }
 }
