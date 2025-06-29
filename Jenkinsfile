@@ -22,7 +22,7 @@ pipeline {
                     def services = [
                         [name: 'API Gateway', path: './api-gateway'],
                         [name: 'OMS Server', path: './oms-express-server'],
-                        [name: 'Kamarket Server', path: './kamarket-express-server']
+                        [name: 'Kamarket Server', path: './Kamarket-express-server']
                     ]
                     
                     services.each { service ->
@@ -76,7 +76,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                    cd ./kamarket-express-server && docker build -t ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} .
+                    cd ./Kamarket-express-server && docker build -t ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} .
                     """
                 }
             }
