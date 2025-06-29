@@ -4,7 +4,7 @@ pipeline {
     
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('dh_cred')
-        DOCKER_IMAGE_PREFIX = "${DOCKERHUB_CREDENTIALS_USR}/back-pfe"
+        IMAGE_NAME = "${DOCKERHUB_CREDENTIALS_USR}/back-pfe"
     }
     
     stages {
