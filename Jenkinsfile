@@ -16,16 +16,13 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Install Node.js if not present
-                    if (isUnix()) {
-                        sh '''
-                            curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-                            sudo apt-get install -y nodejs
-                            npm install -g npm@latest
-                        '''
-                    } else {
-                        bat 'choco install nodejs -y'
-                    }
+                    // Install Node.js using Jenkins NodeJS plugin (recommended approach)
+                    // Make sure NodeJS plugin is installed and configured in Jenkins
+                    // This avoids the need for sudo
+                    sh '''
+                        node --version || echo "Node.js not installed"
+                        npm --version || echo "npm not installed"
+                    '''
                 }
             }
         }
@@ -76,11 +73,6 @@ pipeline {
                         docker.image("${IMAGE_NAME}-api-gateway:${env.BUILD_NUMBER}").push()
                         docker.image("${IMAGE_NAME}-kamarket-service:${env.BUILD_NUMBER}").push()
                         docker.image("${IMAGE_NAME}-oms-service:${env.BUILD_NUMBER}").push()
-                        
-                        // Push as latest tags
-                        docker.image("${IMAGE_NAME}-api-gateway:${env.BUILD_NUMBER}").push('latest')
-                        docker.image("${IMAGE_NAME}-kamarket-service:${env.BUILD_NUMBER}").push('latest')
-                        docker.image("${IMAGE_NAME}-oms-service:${env.BUILD_NUMBER}").push('latest')
                     }
                 }
             }
@@ -89,10 +81,7 @@ pipeline {
         stage('Deploy with Docker Compose') {
             steps {
                 script {
-                    // Stop and remove existing containers
                     sh 'docker-compose down || true'
-                    
-                    // Start new containers
                     sh 'docker-compose up -d'
                 }
             }
@@ -105,13 +94,9 @@ pipeline {
         }
         success {
             echo "Build ${env.BUILD_NUMBER} succeeded!"
-            // Uncomment if you have Slack plugin installed:
-            // slackSend(color: 'good', message: "Build ${env.BUILD_NUMBER} succeeded!")
         }
         failure {
             echo "Build ${env.BUILD_NUMBER} failed!"
-            // Uncomment if you have Slack plugin installed:
-            // slackSend(color: 'danger', message: "Build ${env.BUILD_NUMBER} failed!")
         }
     }
 }
