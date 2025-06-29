@@ -3,44 +3,48 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dh_cred')
         REGISTRY_NAMESPACE = "${DOCKERHUB_CREDENTIALS_USR}"
-        // Define image names for each service
+        // Image names matching your directory structure
         API_GATEWAY_IMAGE = "${REGISTRY_NAMESPACE}/api-gateway"
         OMS_IMAGE = "${REGISTRY_NAMESPACE}/oms-express-server"
         KAMARKET_IMAGE = "${REGISTRY_NAMESPACE}/kamarket-express-server"
     }
     options {
-        skipStagesAfterUnstable() // Skip remaining stages if one fails
-        timeout(time: 30, unit: 'MINUTES') // Set a timeout
+        skipStagesAfterUnstable()
+        timeout(time: 30, unit: 'MINUTES')
     }
     triggers {
-        pollSCM('*/5 * * * *') // Check every 5 minutes
+        pollSCM('*/5 * * * *')
     }
     stages {
-        stage('Verify Dockerfiles Exist') {
+        stage('Verify Structure') {
             steps {
                 script {
-                    // Verify Dockerfiles exist before attempting builds
-                    def requiredDirs = [
-                        'api-gateway': 'Dockerfile',
-                        'oms-express-server': 'Dockerfile',
-                        'kamarket-express-server': 'Dockerfile'
+                    // Verify all required directories exist
+                    def services = [
+                        'api-gateway',
+                        'oms-express-server', 
+                        'kamarket-express-server'
                     ]
                     
-                    requiredDirs.each { dir, file ->
-                        if (!fileExists("${dir}/${file}")) {
-                            error("${file} not found in ${dir} directory!")
+                    services.each { service ->
+                        if (!fileExists("${service}/Dockerfile")) {
+                            error("Dockerfile missing in ${service} directory!")
                         } else {
-                            echo "Found ${file} in ${dir}"
+                            echo "Verified ${service}/Dockerfile exists"
                         }
+                    }
+                    
+                    if (!fileExists("docker-compose.yml")) {
+                        echo "Warning: docker-compose.yml not found"
                     }
                 }
             }
         }
         
-        stage('Checkout') {
+        stage('Checkout & Prep') {
             steps {
-                echo "Getting source code for all microservices"
                 checkout scm
+                sh 'find . -name ".DS_Store" -delete' // Clean Mac metadata files
             }
         }
         
@@ -54,37 +58,34 @@ pipeline {
             }
         }
         
-        stage('Build API Gateway') {
-            steps {
-                script {
-                    dir('api-gateway') {
-                        sh """
-                        docker build -t ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} .
-                        """
+        stage('Parallel Builds') {
+            failFast true // Fail immediately if any parallel stage fails
+            parallel {
+                stage('API Gateway') {
+                    steps {
+                        dir('api-gateway') {
+                            sh """
+                            docker build -t ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} .
+                            """
+                        }
                     }
                 }
-            }
-        }
-        
-        stage('Build OMS Express Server') {
-            steps {
-                script {
-                    dir('oms-express-server') {
-                        sh """
-                        docker build -t ${OMS_IMAGE}:${env.BUILD_NUMBER} .
-                        """
+                stage('OMS Server') {
+                    steps {
+                        dir('oms-express-server') {
+                            sh """
+                            docker build -t ${OMS_IMAGE}:${env.BUILD_NUMBER} .
+                            """
+                        }
                     }
                 }
-            }
-        }
-        
-        stage('Build Kamarket Express Server') {
-            steps {
-                script {
-                    dir('kamarket-express-server') {
-                        sh """
-                        docker build -t ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} .
-                        """
+                stage('Kamarket Server') {
+                    steps {
+                        dir('kamarket-express-server') {
+                            sh """
+                            docker build -t ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} .
+                            """
+                        }
                     }
                 }
             }
@@ -94,37 +95,41 @@ pipeline {
             steps {
                 script {
                     sh """
-                    docker push ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} || echo "Failed to push API Gateway"
-                    docker push ${OMS_IMAGE}:${env.BUILD_NUMBER} || echo "Failed to push OMS Server"
-                    docker push ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} || echo "Failed to push Kamarket Server"
+                    docker push ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER}
+                    docker push ${OMS_IMAGE}:${env.BUILD_NUMBER}
+                    docker push ${KAMARKET_IMAGE}:${env.BUILD_NUMBER}
                     """
                 }
             }
         }
         
-        stage('Cleanup') {
+        stage('Compose Build') {
+            when {
+                expression { fileExists('docker-compose.yml') }
+            }
             steps {
-                script {
-                    sh """
-                    docker rmi ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} || true
-                    docker rmi ${OMS_IMAGE}:${env.BUILD_NUMBER} || true
-                    docker rmi ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} || true
-                    docker logout
-                    """
-                }
+                sh 'docker-compose build'
             }
         }
     }
     post {
         always {
-            echo 'Pipeline completed - cleanup done'
+            script {
+                sh """
+                docker rmi ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} || true
+                docker rmi ${OMS_IMAGE}:${env.BUILD_NUMBER} || true
+                docker rmi ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} || true
+                docker logout
+                """
+            }
         }
         success {
-            echo 'Pipeline succeeded!'
+            echo 'All microservices built and pushed successfully!'
+            // slackSend(color: 'good', message: "Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}")
         }
         failure {
-            echo 'Pipeline failed!'
-            // Add notification here (email, Slack, etc.)
+            echo 'Pipeline failed! Check the logs.'
+            // slackSend(color: 'danger', message: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}")
         }
     }
 }
