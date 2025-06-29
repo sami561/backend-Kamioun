@@ -24,7 +24,6 @@ export const getCategory = async (req: Request, res: Response): Promise<void> =>
     let category = await Category.findOne({ categoryId: Number(id) });
 
     if (!category) {
-      console.log(`⚠️ Category with ID ${id} not found. Fetching from API...`);
       await fetchAndStoreCategories();
       category = await Category.findOne({ categoryId: Number(id) });
 
