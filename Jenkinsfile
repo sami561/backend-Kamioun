@@ -8,10 +8,35 @@ pipeline {
         OMS_IMAGE = "${REGISTRY_NAMESPACE}/oms-express-server"
         KAMARKET_IMAGE = "${REGISTRY_NAMESPACE}/kamarket-express-server"
     }
+    options {
+        skipStagesAfterUnstable() // Skip remaining stages if one fails
+        timeout(time: 30, unit: 'MINUTES') // Set a timeout
+    }
     triggers {
         pollSCM('*/5 * * * *') // Check every 5 minutes
     }
     stages {
+        stage('Verify Dockerfiles Exist') {
+            steps {
+                script {
+                    // Verify Dockerfiles exist before attempting builds
+                    def requiredDirs = [
+                        'api-gateway': 'Dockerfile',
+                        'oms-express-server': 'Dockerfile',
+                        'kamarket-express-server': 'Dockerfile'
+                    ]
+                    
+                    requiredDirs.each { dir, file ->
+                        if (!fileExists("${dir}/${file}")) {
+                            error("${file} not found in ${dir} directory!")
+                        } else {
+                            echo "Found ${file} in ${dir}"
+                        }
+                    }
+                }
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 echo "Getting source code for all microservices"
@@ -32,7 +57,7 @@ pipeline {
         stage('Build API Gateway') {
             steps {
                 script {
-                    dir('api-gateway') {  // Assuming API Gateway is in this subdirectory
+                    dir('api-gateway') {
                         sh """
                         docker build -t ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} .
                         """
@@ -69,9 +94,9 @@ pipeline {
             steps {
                 script {
                     sh """
-                    docker push ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER}
-                    docker push ${OMS_IMAGE}:${env.BUILD_NUMBER}
-                    docker push ${KAMARKET_IMAGE}:${env.BUILD_NUMBER}
+                    docker push ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} || echo "Failed to push API Gateway"
+                    docker push ${OMS_IMAGE}:${env.BUILD_NUMBER} || echo "Failed to push OMS Server"
+                    docker push ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} || echo "Failed to push Kamarket Server"
                     """
                 }
             }
@@ -89,21 +114,17 @@ pipeline {
                 }
             }
         }
-        
-        // Optional: Add deployment stage
-        stage('Deploy to Staging') {
-            when {
-                branch 'develop' // Example: only deploy from develop branch
-            }
-            steps {
-                script {
-                    // Example commands (adjust for your environment):
-                    echo "Deploying to staging environment"
-                    // kubectl set image deployment/api-gateway api-gateway=${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER}
-                    // kubectl set image deployment/oms oms=${OMS_IMAGE}:${env.BUILD_NUMBER}
-                    // kubectl set image deployment/kamarket kamarket=${KAMARKET_IMAGE}:${env.BUILD_NUMBER}
-                }
-            }
+    }
+    post {
+        always {
+            echo 'Pipeline completed - cleanup done'
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+            // Add notification here (email, Slack, etc.)
         }
     }
 }
