@@ -16,14 +16,14 @@ services:
       - microservices-network
 
   service1:
-    build: ./service1
+    build: ./Kamarket-express-server
     ports:
       - "3001:3001"
     networks:
       - microservices-network
 
   service2:
-    build: ./service2
+    build: ./oms-express-server
     ports:
       - "3002:3002"
     networks:
