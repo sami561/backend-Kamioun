@@ -19,9 +19,29 @@ const createJwtPayload = (user: any): JwtPayload => {
     _id: user._id.toString(),
     firstName: user.firstName,
     lastName: user.lastName,
+    address: user.address,
+    city: user.city,
     account: user.account.toString(),
-    ...(user.email && { email: user.email }),
+    profilePhoto: user.profilePhoto,
     ...(user.phoneNumber && { phoneNumber: user.phoneNumber }),
+  };
+
+  const token = jwt.sign(payload, getEnv("JWT_SECRET"), {
+    expiresIn: "30d",
+  });
+
+  return { token, payload };
+};
+const createJwtPayloademail = (user: any): JwtPayload => {
+  const payload: UserPayload = {
+    _id: user._id.toString(),
+    firstName: user.firstName,
+    lastName: user.lastName,
+    address: user.address,
+    city: user.city,
+    account: user.account.toString(),
+    profilePhoto: user.profilePhoto,
+    ...(user.email && { email: user.email }),
   };
 
   const token = jwt.sign(payload, getEnv("JWT_SECRET"), {
@@ -69,7 +89,6 @@ export const registerWithPhone = async (data: RegisterWithPhoneDto) => {
   const user = await userModel.create({
     ...data,
     password: hashedPassword,
-    email: "dddd",
     active: true,
     account: account._id,
   });
@@ -89,7 +108,7 @@ export const loginWithEmail = async (data: LoginWithEmailDto) => {
     throw new BadRequestError("Wrong password");
   }
 
-  return createJwtPayload(user);
+  return createJwtPayloademail(user);
 };
 
 export const loginWithPhone = async (data: LoginWithPhoneDto) => {
