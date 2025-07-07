@@ -15,7 +15,39 @@ export const getCart = async (req: Request, res: Response): Promise<void> => {
 
   let cart = await cartModel
     .findOne({ user: userId, status: "active" })
-    .populate("items.product");
+    .populate({
+      path: "items.product",
+      populate: [{ path: "brand" }, { path: "categories" }],
+    });
+
+  if (!cart) {
+    cart = await cartModel.create({
+      user: userId,
+      items: [],
+      total: 0,
+      status: "active",
+    });
+  }
+
+  res.status(200).json(cart);
+};
+
+export const getCartByUserId = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    throw new BadRequestError("User not authenticated");
+  }
+
+  let cart = await cartModel
+    .findOne({ user: userId, status: "active" })
+    .populate({
+      path: "items.product",
+      populate: [{ path: "brand" }, { path: "categories" }],
+    });
 
   if (!cart) {
     cart = await cartModel.create({

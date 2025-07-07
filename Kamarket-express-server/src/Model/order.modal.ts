@@ -1,28 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-
-interface IOrderItem {
-  item_id: number;
-  order_id: number;
-  product_id: number;
-  name: string;
-  qty_invoiced: number;
-  row_total_incl_tax: number;
-  qty_refunded: number;
-  amount_refunded: number;
-}
-
-export interface IOrder extends Document {
-  entity_id: number;
-  state: string;
-  status: string;
-  base_grand_total: number;
-  created_at: Date;
-  updated_at: Date;
-  customer_id: number;
-  discount_amount: number;
-  store_id: number;
-  items: IOrderItem[];
-}
+import { IOrder, IOrderItem } from "../types/order.types";
 
 const OrderItemSchema = new Schema<IOrderItem>({
   item_id: { type: Number, required: true },
@@ -44,8 +21,10 @@ const OrderSchema = new Schema<IOrder>(
     updated_at: { type: Date, required: true },
     customer_id: { type: Number, required: true },
     discount_amount: { type: Number, required: true },
-    store_id: { type: Number, required: true },
+    store_id: { type: Number },
     items: { type: [OrderItemSchema], required: true },
+    delivery_date: { type: Date },
+    delivery_description: { type: String },
   },
   { versionKey: false }
 );
