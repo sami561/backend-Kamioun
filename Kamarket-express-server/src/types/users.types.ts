@@ -151,6 +151,8 @@ export const userPayload = userObjectSchema
     profilePhoto: true,
   })
   .extend({
+    email: z.string().email().optional(),
+    phoneNumber: z.string().optional(),
     iat: z.number().optional(),
     exp: z.number().optional(),
   })

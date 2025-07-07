@@ -100,6 +100,7 @@ export const registerWithPhone = async (data: RegisterWithPhoneDto) => {
 export const loginWithEmail = async (data: LoginWithEmailDto) => {
   const user = await userModel.findOne({ email: data.email });
 
+  console.log("🚀 ~ loginWithEmail ~ user:", user)
   if (!user) {
     throw new BadRequestError("User not found");
   }

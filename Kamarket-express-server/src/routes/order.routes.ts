@@ -4,10 +4,13 @@ import {
   deleteOrder,
   getAllOrders,
   updateOrder,
+  getCustomerOrders,
 } from "../handlers/order.handelers";
+import jwtMiddleware from "../middlewares/jwt.middleware";
 const router = Router();
-router.get("/all", getAllOrders);
-router.post("/", createOrder);
-router.put("/:id", updateOrder);
-router.delete("/:id", deleteOrder);
+router.get("/all", jwtMiddleware, getAllOrders);
+router.get("/customer", jwtMiddleware, getCustomerOrders);
+router.post("/", jwtMiddleware, createOrder);
+router.put("/:id", jwtMiddleware, updateOrder);
+router.delete("/:id", jwtMiddleware, deleteOrder);
 export default router;
