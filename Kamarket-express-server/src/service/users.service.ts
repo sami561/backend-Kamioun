@@ -11,6 +11,7 @@ import {
   RegisterWithEmailDto,
   RegisterWithPhoneDto,
   UserPayload,
+  UpdateCustomerDto,
 } from "../types/users.types";
 import { getEnv } from "../utils/env";
 
@@ -194,4 +195,29 @@ export const countAdmins = async () => {
   ]);
 
   return { count: result[0]?.total || 0 };
+};
+
+export const updateCustomer = async (
+  customerId: string,
+  data: UpdateCustomerDto
+) => {
+  const customer = await userModel.findById(customerId);
+
+  if (!customer) {
+    throw new BadRequestError("Customer not found");
+  }
+
+  // Verify this is actually a customer
+  const account = await accountModel.findById(customer.account);
+  if (!account || account.accountType !== AccountTypes.CUSTOMER) {
+    throw new BadRequestError("User is not a customer");
+  }
+
+  const updatedCustomer = await userModel.findByIdAndUpdate(
+    customerId,
+    { ...data },
+    { new: true, runValidators: true }
+  );
+
+  return updatedCustomer;
 };

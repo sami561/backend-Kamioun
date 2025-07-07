@@ -7,6 +7,8 @@ export const productSchema = z.object({
   sku: z.string(),
   name: z.string(),
   price: z.number(),
+  unitPrice: z.number(),
+  showSpecialPrice: z.boolean().optional(),
   pcb: z.number().optional(),
   cost: z.number().optional(),
   special_price: z.number().optional(),
@@ -29,5 +31,9 @@ export const productSchema = z.object({
     backorders: z.number().optional(),
     low_stock_date: z.string().optional(),
   }),
+  sales: z.boolean().optional(),
+  wholesales: z.boolean().optional(),
+  newArrivals: z.boolean().optional(),
+  discount: z.boolean().optional(),
 });
 export type Product = z.infer<typeof productSchema>;

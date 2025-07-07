@@ -1,22 +1,11 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { StockItem } from "../types/stockItem.types";
 
-export interface IStockItem extends Document {
-  item_id: number;
-  product_id: number;
-  stock_id: number;
-  qty: number;
-  is_in_stock: boolean;
-  min_qty: number;
-  min_sale_qty: number;
-  max_sale_qty: number;
-  backorders: number;
-  low_stock_date: string;
-}
+type IStockItem = StockItem & Document;
 
 const StockItemSchema = new Schema<IStockItem>(
   {
     item_id: { type: Number },
-    product_id: { type: Number },
     stock_id: { type: Number },
     qty: { type: Number },
     is_in_stock: { type: Boolean },

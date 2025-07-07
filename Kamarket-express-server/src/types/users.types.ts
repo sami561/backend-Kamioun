@@ -164,3 +164,21 @@ export const jwtSchema = z.object({
 });
 
 export type JwtPayload = z.infer<typeof jwtSchema>;
+
+export const updateCustomerDto = userObjectSchema
+  .pick({
+    firstName: true,
+    lastName: true,
+    address: true,
+    city: true,
+    location: true,
+    profilePhoto: true,
+  })
+  .partial()
+  .strict();
+
+export type UpdateCustomerDto = z.infer<typeof updateCustomerDto>;
+
+export const updateCustomerRequestSchema = baseRequestSchema.extend({
+  body: updateCustomerDto,
+});

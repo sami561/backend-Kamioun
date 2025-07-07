@@ -5,7 +5,9 @@ import AuthRoutes from "./routes/auth.routes";
 import categoryRoutes from "./routes/category.routes";
 import supplierRoutes from "./routes/supplier.routes";
 import brandRoutes from "./routes/brand.routes";
-import userRoutes from "./routes/users.route";
+import userRoutes from "./routes/user.routes";
+import cartRoutes from "./routes/cart.routes";
+import stockItemRoutes from "./routes/stockItem.routes";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error-handler.middleware";
 
@@ -32,6 +34,8 @@ app.use("/kamarket/auth", AuthRoutes);
 app.use("/kamarket/supplier", supplierRoutes);
 app.use("/kamarket/brand", brandRoutes);
 app.use("/kamarket/user", userRoutes);
+app.use("/kamarket/cart", cartRoutes);
+app.use("/kamarket/stock-item", stockItemRoutes);
 app.get("/kamarket/profile", (req, res) => {
   res.json({
     profile: true,

@@ -24,8 +24,27 @@ export const getAllProducts = async (
   _req: Request,
   res: Response
 ): Promise<void> => {
-  const products = await productModel.find({}).populate("stock_item");
+  const products = await productModel
+    .find({})
+    .populate(["stock_item", "brand", "categories", "stock_item"]);
   res.json(products);
+};
+
+export const getProductById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+
+  const product = await productModel
+    .findById(id)
+    .populate(["stock_item", "brand", "categories", "stock_item"]);
+
+  if (!product) {
+    throw new NotFoundError("Product not found!");
+  }
+
+  res.json(product);
 };
 
 export const createProduct = async (
@@ -110,4 +129,52 @@ export const updateProduct = async (
   );
 
   res.json(updatedProduct);
+};
+
+export const getProductsByBrand = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { brandId } = req.params;
+
+  const products = await productModel
+    .find({ brand: brandId })
+    .populate("stock_item")
+    .populate("brand")
+    .populate("categories");
+
+  res.json(products);
+};
+
+export const getProductsByCategory = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { categoryId } = req.params;
+
+  const products = await productModel
+    .find({ categories: categoryId })
+    .populate("stock_item")
+    .populate("brand")
+    .populate("categories");
+
+  res.json(products);
+};
+
+export const getProductsByBrandAndCategory = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { brandId, categoryId } = req.params;
+
+  const products = await productModel
+    .find({
+      brand: brandId,
+      categories: categoryId,
+    })
+    .populate("stock_item")
+    .populate("brand")
+    .populate("categories");
+
+  res.json(products);
 };

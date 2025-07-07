@@ -61,7 +61,7 @@ const CartSchema = new Schema<ICart>(
 // Calculate total before saving
 CartSchema.pre("save", function (next) {
   this.total = this.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum: number, item: ICartItem) => sum + item.price * item.quantity,
     0
   );
   next();

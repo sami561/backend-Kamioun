@@ -7,6 +7,8 @@ const ProductSchema = new Schema<IProduct>(
     sku: { type: String, required: true },
     name: { type: String, required: true },
     price: { type: Number, required: true },
+    unitPrice: { type: Number, required: true },
+    showSpecialPrice: { type: Boolean, required: false },
     cost: { type: Number },
     special_price: { type: Number },
     image: { type: [String], default: [] },
@@ -20,6 +22,10 @@ const ProductSchema = new Schema<IProduct>(
     ],
     pcb: { type: Number },
     stock_item: { type: Schema.Types.ObjectId, ref: "StockItem" },
+    sales: { type: Boolean, default: false },
+    wholesales: { type: Boolean, default: false },
+    newArrivals: { type: Boolean, default: false },
+    discount: { type: Boolean, default: false },
   },
   { versionKey: false, timestamps: true }
 );

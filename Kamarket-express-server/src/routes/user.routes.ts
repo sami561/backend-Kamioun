@@ -4,13 +4,23 @@ import {
   getAdmins,
   countCustomers,
   countAdmins,
+  updateCustomer,
 } from "../handlers/user.handlers";
+import jwtMiddleware from "../middlewares/jwt.middleware";
+import { uploadMiddleware } from "../middlewares/file-upload.middleware";
 
 const router = Router();
 
-router.get("/customers", getCustomers);
-router.get("/admins", getAdmins);
-router.get("/customers/count", countCustomers);
-router.get("/admins/count", countAdmins);
+// All routes require JWT authentication
+router.get("/customers", jwtMiddleware, getCustomers);
+router.get("/admins", jwtMiddleware, getAdmins);
+router.get("/customers/count", jwtMiddleware, countCustomers);
+router.get("/admins/count", jwtMiddleware, countAdmins);
+router.put(
+  "/updateProfile",
+  jwtMiddleware,
+  uploadMiddleware.single("profilePhoto"),
+  updateCustomer
+);
 
 export default router;

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
-    "test": "APP_ENV=test jest --watch --verbose --detectOpenHandles"
+    "test": "APP_ENV=test jest --watch --verbose --detectOpenHandles",
+    "seed:stock-items": "ts-node src/scripts/seed-stockItems.ts"
   },
   "author": "",
   "license": "MIT",
