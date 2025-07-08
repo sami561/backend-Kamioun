@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getCart,
   getCartByUserId,
+  getAllCarts,
   addToCart,
   updateCartItem,
   removeFromCart,
@@ -12,6 +13,7 @@ import jwtMiddleware from "../middlewares/jwt.middleware";
 const router = Router();
 
 // All cart routes require JWT authentication
+router.get("/all", jwtMiddleware, getAllCarts);
 router.get("/", jwtMiddleware, getCart);
 router.get("/customer", jwtMiddleware, getCartByUserId);
 router.post("/add", jwtMiddleware, addToCart);

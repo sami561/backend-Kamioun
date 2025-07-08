@@ -5,6 +5,7 @@ import {
   countAdmins as countAdminsService,
   updateCustomer as updateCustomerService,
 } from "../service/users.service";
+import userModel from "../Model/user.model";
 import { Request, Response } from "express";
 
 export const getCustomers = async (_req: Request, res: Response) => {
@@ -46,4 +47,57 @@ export const updateCustomer = async (
 
   const updatedCustomer = await updateCustomerService(userId, updateData);
   res.json(updatedCustomer);
+};
+
+export const activateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+  const user = await userModel.findByIdAndUpdate(
+    id,
+    { active: true },
+    { new: true }
+  );
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+  res.json({ message: "User activated", user });
+};
+
+export const deactivateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+  const user = await userModel.findByIdAndUpdate(
+    id,
+    { active: false },
+    { new: true }
+  );
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+  res.json({ message: "User deactivated", user });
+};
+export const getAccountTypeCounts = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  const result = await userModel.aggregate([
+    {
+      $group: {
+        _id: "$accountType",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+  // Format as { CUSTOMER: 10, ADMIN: 5, ... }
+  const counts: Record<string, number> = {};
+  result.forEach((r) => {
+    counts[r._id] = r.count;
+  });
+  res.json(counts);
 };

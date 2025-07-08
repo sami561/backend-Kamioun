@@ -6,6 +6,21 @@ import productModel from "../Model/product.model";
 import { AddToCartDto, UpdateCartItemDto } from "../types/cart.types";
 import mongoose from "mongoose";
 
+export const getAllCarts = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  const carts = await cartModel
+    .find({})
+    .populate({
+      path: "items.product",
+      populate: [{ path: "brand" }, { path: "categories" }],
+    })
+    .populate("user");
+
+  res.status(200).json(carts);
+};
+
 export const getCart = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?._id;
 

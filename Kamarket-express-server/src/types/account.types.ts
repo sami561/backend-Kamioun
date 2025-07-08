@@ -4,6 +4,7 @@ import { objectIdSchema } from "./zod.types";
 export enum AccountTypes {
   CUSTOMER = "customer",
   ADMIN = "admin",
+  OPERATION = "operation",
 }
 
 export const accountSchema = z.object({

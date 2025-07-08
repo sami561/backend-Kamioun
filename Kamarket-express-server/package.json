@@ -6,7 +6,7 @@
     "build": "tsc",
     "dev": "nodemon",
     "test": "APP_ENV=test jest --watch --verbose --detectOpenHandles",
-    "seed:stock-items": "ts-node src/scripts/seed-stockItems.ts"
+    "seed:stock-items": "ts-node src/scripts/seed-orders.ts"
   },
   "author": "",
   "license": "MIT",

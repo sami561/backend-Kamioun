@@ -75,3 +75,91 @@ export const updateOrder = async (
 
   res.json(order);
 };
+
+export const getCompletedOrderTotals = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  const orders = await OrderModel.find({ status: "completed" });
+  const total = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  res.json({ total });
+};
+
+export const getOrdersByMonth = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const year = parseInt(req.query.year as string, 10);
+  const month = parseInt(req.query.month as string, 10);
+  if (!year || !month || month < 1 || month > 12) {
+    res.status(400).json({ message: "Invalid year or month" });
+    return;
+  }
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 1);
+  const orders = await OrderModel.find({
+    created_at: { $gte: start, $lt: end },
+  });
+  res.json(orders);
+};
+
+export const getCompletedOrdersByMonth = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const year = parseInt(req.query.year as string, 10);
+  const month = parseInt(req.query.month as string, 10);
+  if (!year || !month || month < 1 || month > 12) {
+    res.status(400).json({ message: "Invalid year or month" });
+    return;
+  }
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 1);
+  const orders = await OrderModel.find({
+    status: "completed",
+    created_at: { $gte: start, $lt: end },
+  });
+  res.json(orders);
+};
+export const getOrdersByDay = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const dateStr = req.query.date as string;
+  if (!dateStr) {
+    res.status(400).json({ message: "Missing date parameter" });
+    return;
+  }
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    res.status(400).json({ message: "Invalid date format" });
+    return;
+  }
+  const nextDay = new Date(date);
+  nextDay.setDate(date.getDate() + 1);
+
+  const orders = await OrderModel.find({
+    created_at: { $gte: date, $lt: nextDay },
+  });
+  res.json(orders);
+};
+
+export const getGvmPerMonth = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  const result = await OrderModel.aggregate([
+    { $match: { status: "completed" } },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$delivery_date" },
+          month: { $month: "$delivery_date" },
+        },
+        gvm: { $sum: "$total" },
+      },
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } },
+  ]);
+  res.json(result);
+};

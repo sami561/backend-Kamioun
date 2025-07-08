@@ -10,12 +10,10 @@ const jwtMiddleware = (
   next: NextFunction
 ): void => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
-  console.log("🚀 ~ token:", token);
   if (!token) {
     throw new UnauthorizedError();
   }
   const decoded = jwt.verify(token, getEnv("JWT_SECRET"));
-  console.log("🚀 ~ decoded:", decoded);
 
   req.user = userPayload.parse(decoded);
 
