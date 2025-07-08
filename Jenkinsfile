@@ -105,5 +105,16 @@ pipeline {
             }
         }
     }
-
+    post {
+        always {
+            script {
+                sh """
+                docker rmi ${API_GATEWAY_IMAGE}:${env.BUILD_NUMBER} || true
+                docker rmi ${OMS_IMAGE}:${env.BUILD_NUMBER} || true
+                docker rmi ${KAMARKET_IMAGE}:${env.BUILD_NUMBER} || true
+                docker logout
+                """
+            }
+        }
+    }
 }
