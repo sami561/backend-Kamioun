@@ -1,6 +1,15 @@
 FROM node:20
-EXPOSE 3000
-WORKDIR /app 
+WORKDIR /app
+
+# Copy package files first
 COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application
 COPY . .
-CMD ["npm","run", "dev"]
+
+# Expose port and run the application
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
