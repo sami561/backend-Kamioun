@@ -66,7 +66,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                    cd ./oms-express-server && docker build -t ${OMS_IMAGE}:${env.BUILD_NUMBER} .
+                    cd ./ads && docker build -t ${OMS_IMAGE}:${env.BUILD_NUMBER} .
                     """
                 }
             }
