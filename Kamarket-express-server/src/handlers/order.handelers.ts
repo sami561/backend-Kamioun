@@ -163,3 +163,122 @@ export const getGvmPerMonth = async (
   ]);
   res.json(result);
 };
+
+export const updateOrderStatus = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+  const { status, description } = req.body;
+
+  if (!status) {
+    res.status(400).json({ message: "Status is required" });
+    return;
+  }
+
+  const order = await OrderModel.findById(id);
+  if (!order) {
+    throw new NotFoundError("Order not found!");
+  }
+
+  // Add lifecycle event
+  const lifecycleEvent = {
+    state: order.state,
+    status: status,
+    date: new Date(),
+    description: description || `Status updated to ${status}`,
+  };
+
+  const updatedOrder = await OrderModel.findOneAndUpdate(
+    { _id: id },
+    {
+      status: status,
+      $push: { lifecycle: lifecycleEvent },
+    },
+    { new: true }
+  );
+
+  res.json(updatedOrder);
+};
+
+export const updateOrderState = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+  const { state, description } = req.body;
+
+  if (!state) {
+    res.status(400).json({ message: "State is required" });
+    return;
+  }
+
+  const order = await OrderModel.findById(id);
+  if (!order) {
+    throw new NotFoundError("Order not found!");
+  }
+
+  // Add lifecycle event
+  const lifecycleEvent = {
+    state: state,
+    status: order.status,
+    date: new Date(),
+    description: description || `State updated to ${state}`,
+  };
+
+  const updatedOrder = await OrderModel.findOneAndUpdate(
+    { _id: id },
+    {
+      state: state,
+      $push: { lifecycle: lifecycleEvent },
+    },
+    { new: true }
+  );
+
+  res.json(updatedOrder);
+};
+
+export const updateOrderStatusAndState = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+  const { status, state, description } = req.body;
+
+  if (!status && !state) {
+    res.status(400).json({ message: "At least status or state is required" });
+    return;
+  }
+
+  const order = await OrderModel.findById(id);
+  if (!order) {
+    throw new NotFoundError("Order not found!");
+  }
+
+  // Prepare update object
+  const updateData: any = {};
+  if (status) updateData.status = status;
+  if (state) updateData.state = state;
+
+  // Add lifecycle event
+  const lifecycleEvent = {
+    state: state || order.state,
+    status: status || order.status,
+    date: new Date(),
+    description:
+      description ||
+      `Updated to state: ${state || order.state}, status: ${
+        status || order.status
+      }`,
+  };
+
+  updateData.$push = { lifecycle: lifecycleEvent };
+
+  const updatedOrder = await OrderModel.findOneAndUpdate(
+    { _id: id },
+    updateData,
+    { new: true }
+  );
+
+  res.json(updatedOrder);
+};

@@ -5,6 +5,7 @@ export enum AccountTypes {
   CUSTOMER = "customer",
   ADMIN = "admin",
   OPERATION = "operation",
+  VENDOR = "vendor",
 }
 
 export const accountSchema = z.object({

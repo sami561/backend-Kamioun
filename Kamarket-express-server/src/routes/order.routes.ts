@@ -10,6 +10,9 @@ import {
   getCompletedOrdersByMonth,
   getOrdersByDay,
   getGvmPerMonth,
+  updateOrderStatus,
+  updateOrderState,
+  updateOrderStatusAndState,
 } from "../handlers/order.handelers";
 import jwtMiddleware from "../middlewares/jwt.middleware";
 import { Request, Response } from "express";
@@ -25,4 +28,10 @@ router.put("/:id", jwtMiddleware, updateOrder);
 router.delete("/:id", jwtMiddleware, deleteOrder);
 router.get("/by-day", jwtMiddleware, getOrdersByDay);
 router.get("/gvm-per-month", jwtMiddleware, getGvmPerMonth);
+
+// New routes for updating order status and state
+router.put("/:id/status", jwtMiddleware, updateOrderStatus);
+router.put("/:id/state", jwtMiddleware, updateOrderState);
+router.put("/:id/status-state", jwtMiddleware, updateOrderStatusAndState);
+
 export default router;

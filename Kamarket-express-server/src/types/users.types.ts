@@ -155,6 +155,8 @@ export const userPayload = userObjectSchema
     phoneNumber: z.string().optional(),
     iat: z.number().optional(),
     exp: z.number().optional(),
+    // Add accountType to the payload type as optional
+    accountType: z.string().optional(),
   })
   .strict();
 

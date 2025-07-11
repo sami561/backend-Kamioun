@@ -40,9 +40,12 @@ const createJwtPayloademail = (user: any): JwtPayload => {
     lastName: user.lastName,
     address: user.address,
     city: user.city,
-    account: user.account.toString(),
+    account: user.account._id
+      ? user.account._id.toString()
+      : user.account.toString(),
     profilePhoto: user.profilePhoto,
     ...(user.email && { email: user.email }),
+    accountType: user.account.accountType,
   };
 
   const token = jwt.sign(payload, getEnv("JWT_SECRET"), {
@@ -98,9 +101,12 @@ export const registerWithPhone = async (data: RegisterWithPhoneDto) => {
 };
 
 export const loginWithEmail = async (data: LoginWithEmailDto) => {
-  const user = await userModel.findOne({ email: data.email });
+  // Populate the account field to access accountType
+  const user = await userModel
+    .findOne({ email: data.email })
+    .populate({ path: "account", select: "accountType" });
 
-  console.log("🚀 ~ loginWithEmail ~ user:", user)
+  console.log("🚀 ~ loginWithEmail ~ user:", user);
   if (!user) {
     throw new BadRequestError("User not found");
   }
@@ -148,8 +154,33 @@ export const getAdmins = async () => {
       match: { accountType: AccountTypes.ADMIN },
     })
     .then((users) => users.filter((user) => user.account !== null));
+  console.log("🚀 ~ getAdmins ~ admins:", admins);
 
   return admins;
+};
+
+export const getOperations = async () => {
+  const operations = await userModel
+    .find()
+    .populate({
+      path: "account",
+      match: { accountType: AccountTypes.OPERATION },
+    })
+    .then((users) => users.filter((user) => user.account !== null));
+
+  return operations;
+};
+
+export const getVendors = async () => {
+  const vendors = await userModel
+    .find()
+    .populate({
+      path: "account",
+      match: { accountType: AccountTypes.VENDOR },
+    })
+    .then((users) => users.filter((user) => user.account !== null));
+
+  return vendors;
 };
 
 export const countCustomers = async () => {
@@ -198,6 +229,121 @@ export const countAdmins = async () => {
   return { count: result[0]?.total || 0 };
 };
 
+export const countOperations = async () => {
+  const result = await userModel.aggregate([
+    {
+      $lookup: {
+        from: "accounts",
+        localField: "account",
+        foreignField: "_id",
+        as: "accountDetails",
+      },
+    },
+    {
+      $match: {
+        "accountDetails.accountType": AccountTypes.OPERATION,
+      },
+    },
+    {
+      $count: "total",
+    },
+  ]);
+
+  return { count: result[0]?.total || 0 };
+};
+
+export const countVendors = async () => {
+  const result = await userModel.aggregate([
+    {
+      $lookup: {
+        from: "accounts",
+        localField: "account",
+        foreignField: "_id",
+        as: "accountDetails",
+      },
+    },
+    {
+      $match: {
+        "accountDetails.accountType": AccountTypes.VENDOR,
+      },
+    },
+    {
+      $count: "total",
+    },
+  ]);
+
+  return { count: result[0]?.total || 0 };
+};
+
+export const getCustomerCountsByAccountType = async () => {
+  const result = await userModel.aggregate([
+    {
+      $lookup: {
+        from: "accounts",
+        localField: "account",
+        foreignField: "_id",
+        as: "accountDetails",
+      },
+    },
+    {
+      $unwind: "$accountDetails",
+    },
+    {
+      $group: {
+        _id: "$accountDetails.accountType",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  // Format the result to include all account types with 0 count if no users exist
+  const counts: Record<string, number> = {};
+
+  // Initialize all account types with 0
+  Object.values(AccountTypes).forEach((type) => {
+    counts[type] = 0;
+  });
+
+  // Update with actual counts
+  result.forEach((item) => {
+    counts[item._id] = item.count;
+  });
+
+  return counts;
+};
+
+export const getAllUsers = async () => {
+  const users = await userModel
+    .find()
+    .populate({
+      path: "account",
+      select: "accountType active",
+    })
+    .select("-password") // Exclude password from the response
+    .sort({ createdAt: -1 }); // Sort by creation date, newest first
+
+  return users;
+};
+
+export const getUserById = async (userId: string) => {
+  const user = await userModel
+    .findById(userId)
+    .populate({
+      path: "account",
+      select: "accountType active",
+    })
+    .select("-password"); // Exclude password from the response
+
+  if (!user) {
+    throw new BadRequestError("User not found");
+  }
+
+  return user;
+};
+
 export const updateCustomer = async (
   customerId: string,
   data: UpdateCustomerDto
@@ -221,4 +367,28 @@ export const updateCustomer = async (
   );
 
   return updatedCustomer;
+};
+
+export const updateUser = async (userId: string, data: UpdateCustomerDto) => {
+  const user = await userModel.findById(userId);
+
+  if (!user) {
+    throw new BadRequestError("User not found");
+  }
+
+  // Verify this is not a customer (admin or operation)
+  const account = await accountModel.findById(user.account);
+  if (!account || account.accountType === AccountTypes.CUSTOMER) {
+    throw new BadRequestError(
+      "This endpoint is not for customers. Use /updateProfile for customers."
+    );
+  }
+
+  const updatedUser = await userModel.findByIdAndUpdate(
+    userId,
+    { ...data },
+    { new: true, runValidators: true }
+  );
+
+  return updatedUser;
 };
