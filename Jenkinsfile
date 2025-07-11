@@ -21,7 +21,7 @@ pipeline {
                 script {
                     def services = [
                         [name: 'API Gateway', path: './api-gateway'],
-                        [name: 'OMS Server', path: './oms-express-server'],
+                        [name: 'OMS Server', path: './ads'],
                         [name: 'Kamarket Server', path: './Kamarket-express-server']
                     ]
                     
