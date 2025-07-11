@@ -35,6 +35,15 @@ pipeline {
             }
         }
         
+        stage('Check Disk Space') {
+            steps {
+                script {
+                    def diskSpace = sh(script: "df -h / | tail -1 | awk '{print \$4}'", returnStdout: true).trim()
+                    echo "Available disk space: ${diskSpace}"
+                }
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 checkout scm
