@@ -22,8 +22,8 @@ export const config: Config = {
   GATEWAY_JWT_EXPIRES_IN: process.env.GATEWAY_JWT_EXPIRES_IN || '1m',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-  OMS_SERVICE_URL:
-    process.env.OMS_SERVICE_URL || 'http://kamioun-back-service2-1:3002',
+  OMS_SERVICE_URL: process.env.OMS_SERVICE_URL || 'http://34.173.189.86/oms/oms',
   KAMARKET_SERVICE_URL:
-    process.env.KAMARKET_SERVICE_URL || 'http://kamioun-back-service1-1:3001',
+    process.env.KAMARKET_SERVICE_URL ||
+    'http://34.173.189.86/kamarket/kamarket',
 };
