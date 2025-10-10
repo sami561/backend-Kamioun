@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   api-gateway:
+    container_name: api-gateway
     image: samiayachi/api-gateway:${BUILD_NUMBER}
     ports:
       - "3000:3000"
@@ -15,6 +16,7 @@ services:
       - microservices-network
 
   service1:
+    container_name: service1
     image: samiayachi/kamarket-express-server:${BUILD_NUMBER}
     ports:
       - "3001:3001"
@@ -22,6 +24,7 @@ services:
       - microservices-network
 
   service2:
+    container_name: service2
     image: samiayachi/oms-express-server:${BUILD_NUMBER}
     ports:
       - "3002:3002"
