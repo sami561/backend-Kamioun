@@ -186,3 +186,15 @@ export type UpdateCustomerDto = z.infer<typeof updateCustomerDto>;
 export const updateCustomerRequestSchema = baseRequestSchema.extend({
   body: updateCustomerDto,
 });
+
+export const forgotPasswordDto = z
+  .object({
+    email: z.string().email(),
+  })
+  .strict();
+
+export type ForgotPasswordDto = z.infer<typeof forgotPasswordDto>;
+
+export const forgotPasswordRequestSchema = baseRequestSchema.extend({
+  body: forgotPasswordDto,
+});

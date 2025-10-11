@@ -15,6 +15,8 @@ const envSchema = z.object({
     .string()
     .url()
     .default("mongodb://root:example@mongo:27017/mydatabase"),
+  EMAIL_USER: z.string().email().optional(),
+  EMAIL_PASS: z.string().optional(),
 });
 
 const envVars = envSchema.safeParse(process.env);

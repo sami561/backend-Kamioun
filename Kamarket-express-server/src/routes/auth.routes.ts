@@ -4,6 +4,7 @@ import {
   registerWithPhone,
   loginWithEmail,
   loginWithPhone,
+  forgotPassword,
 } from "../handlers/auth.handlers";
 import validationMiddleware from "../middlewares/validation.middleware";
 import {
@@ -11,6 +12,7 @@ import {
   loginWithPhoneRequestSchema,
   registerWithEmailRequestSchema,
   registerWithPhoneRequestSchema,
+  forgotPasswordRequestSchema,
 } from "../types/users.types";
 
 const router = Router();
@@ -37,6 +39,12 @@ router.post(
   "/login/phone",
   validationMiddleware(loginWithPhoneRequestSchema),
   loginWithPhone
+);
+
+router.post(
+  "/forgot-password",
+  validationMiddleware(forgotPasswordRequestSchema),
+  forgotPassword
 );
 
 export default router;

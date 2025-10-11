@@ -12,8 +12,10 @@ import {
   RegisterWithPhoneDto,
   UserPayload,
   UpdateCustomerDto,
+  ForgotPasswordDto,
 } from "../types/users.types";
 import { getEnv } from "../utils/env";
+import { sendPasswordResetEmail } from "../utils/emailService";
 
 const createJwtPayload = (user: any): JwtPayload => {
   const payload: UserPayload = {
@@ -391,4 +393,24 @@ export const updateUser = async (userId: string, data: UpdateCustomerDto) => {
   );
 
   return updatedUser;
+};
+
+export const forgotPassword = async (data: ForgotPasswordDto) => {
+  const user = await userModel.findOne({ email: data.email });
+
+  if (!user) {
+    throw new BadRequestError("User not found with this email");
+  }
+
+  // Generate a new random password
+  const newPassword = Math.random().toString(36).slice(-8); // 8 character random password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update user's password
+  await userModel.findByIdAndUpdate(user._id, { password: hashedPassword });
+
+  // Send email with new password
+  await sendPasswordResetEmail(data.email, newPassword);
+
+  return { message: "Password reset email sent successfully" };
 };
